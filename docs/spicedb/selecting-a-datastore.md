@@ -5,7 +5,7 @@ SpiceDB ships with a number of [datastores](reference/glossary.md#datastore) -- 
 There are a few available datastores with various design goals:
 
 - [CockroachDB](#cockroachdb) - Recommended for multi-region deployments
-- [Cloud Spanner (Beta)](#cloud-spanner-beta) - Suitable for cloud multi-region deployments
+- [Cloud Spanner](#cloud-spanner) - Suitable for cloud multi-region deployments
 - [MySQL](#mysql) - Recommended for single-region deployments and those familiar with traditional RDBMS operations
 - [PostgreSQL](#postgresql) - Recommended for single-region deployments and those familiar with traditional RDBMS operations
 - [memdb](#memdb) - Recommended for local development and integration testing with applications written to be SpiceDB-native
@@ -85,17 +85,12 @@ The available strategies are:
 | `datastore-readonly`                     | Places the datastore into readonly mode                                               | `--datastore-readonly=true`                    |
 | `datastore-follower-read-delay-duration` | Amount of time to subtract from non-sync revision timestamps to ensure follower reads | `-datastore-follower-read-delay-duration=4.8s` |
 
-## Cloud Spanner (Beta)
-
-:::warning
-The Cloud Spanner driver is currently Beta.
-:::
+## Cloud Spanner
 
 ### Usage Notes
 
 - Requires a Google Cloud Account with an active Cloud Spanner instance
 - Take advantage of Google's TrueTime. The Spanner driver assumes the database is linearizable and skips the transaction overlap strategy required by CockroachDB.
-- Currently in Beta
 
 ### Developer Notes
 
@@ -132,6 +127,51 @@ The Cloud Spanner driver is currently Beta.
 | `datastore-readonly`                     | Places the datastore into readonly mode                                                                                             | `--datastore-readonly=true`                      |
 | `datastore-follower-read-delay-duration` | Amount of time to subtract from non-sync revision timestamps to ensure stale reads                                                  | `--datastore-follower-read-delay-duration=4.8s`  |
 
+## MySQL
+
+### Usage Notes
+
+- Recommended for single-region deployments
+- Setup and operational complexity of running MySQL
+- Does not rely on any non-standard MySQL extensions
+- Compatible with managed MySQL services
+
+### Developer Notes
+
+- Code can be found [here][mysql-code]
+- Documentation can be found [here][mysql-godoc]
+- Implemented using [Go-MySQL-Driver][go-mysql-driver] for a SQL driver
+- Query optimizations are documented [here][mysql-executor]
+- Implements its own [MVCC][mysql-mvcc] model by storing its data with transaction IDs
+
+[mysql-code]: https://github.com/authzed/spicedb/tree/main/internal/datastore/mysql
+[mysql-godoc]: https://pkg.go.dev/github.com/authzed/spicedb/internal/datastore/mysql
+[go-mysql-driver]: https://github.com/go-sql-driver/mysql
+[mysql-executor]: https://github.com/authzed/spicedb/blob/main/internal/datastore/mysql/datastore.go#L317
+[mysql-mvcc]: https://en.wikipedia.org/wiki/Multiversion_concurrency_control
+
+### Configuration
+
+#### Required Parameters
+
+| Parameter            | Description                           | Example                                                                                  |
+| -------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `datastore-engine`   | the datastore engine                  | `--datastore-engine=mysql`
+| `datastore-conn-uri` | connection string used to connect to MySQL | `--datastore-conn-uri="mysql:password@localhost:5432/spicedb?sslmode=disable"` |                                                  |
+
+#### Optional Parameters
+
+| Parameter                             | Description                                                                         | Example                                      |
+| ------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------- |
+| `datastore-conn-max-idletime`         | Maximum idle time for a connection before it is recycled                            | `--datastore-conn-max-idletime=60s`          |
+| `datastore-conn-max-lifetime`         | Maximum lifetime for a connection before it is recycled                             | `--datastore-conn-max-lifetime=300s`         |
+| `datastore-conn-max-open`             | Maximum number of concurrent connections to open                                    | `--datastore-conn-max-open=10`               |
+| `datastore-query-split-size`          | The (estimated) query size at which to split a query into multiple queries          | `--datastore-query-split-size=5kb`           |
+| `datastore-gc-window`                 | Sets the window outside of which overwritten relationships are no longer accessible | `--datastore-gc-window=1s`                   |
+| `datastore-revision-fuzzing-duration` | Sets a fuzzing window on all zookies/zedtokens                                      | `--datastore-revision-fuzzing-duration=50ms` |
+| `datastore-mysql-table-prefix string` | Prefix to add to the name of all SpiceDB database tables                            | `--datastore-mysql-table-prefix=spicedb`     |  
+| `datastore-readonly`                  | Places the datastore into readonly mode                                             | `--datastore-readonly=true`                  |
+
 ## PostgreSQL
 
 ### Usage Notes
@@ -152,8 +192,6 @@ The Cloud Spanner driver is currently Beta.
 
 [pg-code]: https://github.com/authzed/spicedb/tree/main/internal/datastore/postgres
 [pg-godoc]: https://pkg.go.dev/github.com/authzed/spicedb/internal/datastore/postgres
-[pgx]: https://pkg.go.dev/gopkg.in/jackc/pgx.v3
-[alembic]: https://alembic.sqlalchemy.org/en/latest/
 [mvcc]: https://en.wikipedia.org/wiki/Multiversion_concurrency_control
 
 ### Configuration
@@ -194,7 +232,6 @@ The Cloud Spanner driver is currently Beta.
 
 [memdb-code]: https://github.com/authzed/spicedb/tree/main/internal/datastore/memdb
 [memdb-godoc]: https://pkg.go.dev/github.com/authzed/spicedb/internal/datastore/memdb
-[mvcc]: https://en.wikipedia.org/wiki/Multiversion_concurrency_control
 
 ### Configuration
 
