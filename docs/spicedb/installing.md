@@ -32,7 +32,6 @@ docker pull authzed/spicedb
 ```sh
 docker run --name spicedb \
     -p 50051:50051 \
-    --rm \
     authzed/spicedb serve \
     --grpc-preshared-key "somerandomkeyhere"
 ```
@@ -84,7 +83,7 @@ A variety of [clients/tools] can be used to interact with the API.
 [zed] is available via brew on macOS and Linux.
 
 ```sh
-brew install zed
+brew install authzed/tap/spicedb
 ```
 
 ```sh

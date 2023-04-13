@@ -1,33 +1,10 @@
-# Caveats (Experiment)
+# Caveats
 
-:::warning
-Caveats are currently marked as **experimental** and should not be used in production yet. Tooling also does not currently support caveats.
-:::
+Caveats is a feature within SpiceDB that allows for relationships to be defined conditionally: the relationship will only be considered present if the caveat expression evaluates to true.
+
+Caveats allow for Attribute Based Access Control (ABAC)-style decisions on top of the Relationship Based Access Control (ReBAC) model derived from Google Zanzibar.
 
 ## Getting Started
-
-The caveats feature in SpiceDB is currently available at the HEAD revision on the main branch of SpiceDB:
-
-```
-git clone github.com/authzed/spicedb
-git checkout main
-cd cmd/spicedb
-go build .
-```
-
-The feature can be enabled in any running SpiceDB instance by use of the flag or the environmental variable:
-
-```
-spicedb serve --experiment-enable-caveats=true …
-```
-
-Or
-
-```
-SPICEDB_EXPERIMENT_ENABLE_CAVEATS=true spicedb serve …
-```
-
-## Defining Caveats
 
 Caveats are named expressions that can be defined in schema via the **WriteSchema** call, alongside the `definition`s for object types.
 
@@ -297,10 +274,49 @@ CheckPermissionRequest {
 }
 ```
 
-## Known Limitations
+## Validation with Caveats
 
-Below are known limitations of the current implementation which will be completed in the near future:
+The [Assertions] and [Expected Relations] definitions for validation of schema support caveats as well.
 
-- The **zed** command line tool does not currently support Caveats.
-- The Authzed Playground does not currently support Caveats.
-- The development API does not currently support Caveats.
+[assertions]: /guides/schema#writing-assertions
+[expected relations]: /guides/schema#writing-expected-relations
+
+### Assertions
+
+Caveated permissions can be checked in assertions by the addition of the `assertCaveated` block:
+
+```yaml title="Assertions for caveated permissions"
+assertTrue:
+  - "document:specificdocument#reader@user:specificuser"
+assertCaveated:
+  - "document:specificdocument#reader@user:caveateduser"
+assertFalse:
+  - "document:specificdocument#reader@user:anotheruser"
+```
+
+To assert that a permission does or does not exist when some context it specified, the `with` keyword can be used to provide the context:
+
+```yaml title="Assertions for caveated permissions with context"
+assertTrue:
+  - "document:specificdocument#reader@user:specificuser"
+  - 'document:specificdocument#reader@user:caveateduser with {"somecondition": true}'
+assertCaveated:
+  - "document:specificdocument#reader@user:caveateduser"
+assertFalse:
+  - "document:specificdocument#reader@user:anotheruser"
+  - 'document:specificdocument#reader@user:caveateduser with {"somecondition": false}'
+```
+
+### Expected Relations
+
+Expected relations notes if a subject is caveated via the inclusion of the `[...]` string on the end of the subject:
+
+```yaml title="Expected Relations with caveats"
+document:specificdocument#view:
+  - "[user:specificuser] is <document:specificdocument#reader>"
+  - "[user:caveateduser[...]] might be <document:specificdocument#writer>"
+```
+
+:::note
+Expected Relations does **not** evaluate caveats, even if the necessary context is fully specified on the relationship. This means that a caveated subject that might actually return `HAS_PERMISSION` will appear as `subject[...]` in expected relations
+:::
