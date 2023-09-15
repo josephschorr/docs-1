@@ -83,7 +83,7 @@ A variety of [clients/tools] can be used to interact with the API.
 [zed] is available via brew on macOS and Linux.
 
 ```sh
-brew install authzed/tap/spicedb
+brew install authzed/tap/zed
 ```
 
 ```sh
@@ -103,6 +103,13 @@ The following are equivalent:
 spicedb serve --grpc-preshared-key=somerandomkeyhere
 SPICEDB_GRPC_PRESHARED_KEY=somerandomkeyhere spicedb serve
 ```
+Environment variables can be set directly, or via `spicedb.env` file located in the current working directory.
+
+Config values are parsed with the following precedence:
+ - Specified via command line flag
+ - Set via environment variables
+ - Loaded from `spicedb.env`
+ - Default values of application
 
 ## Next Steps
 

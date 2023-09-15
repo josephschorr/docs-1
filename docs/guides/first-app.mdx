@@ -177,17 +177,22 @@ definition {{ tenant }}/post {
 }\`
 ·
 func main() {
+{% if authzed %}
+	systemCerts, err := grpcutil.WithSystemCerts(grpcutil.VerifyCA)
+	if err != nil {
+		log.Fatalf("unable to load system CA certificates: %s", err)
+	}
+·
 	client, err := authzed.NewClient(
 		"{{ endpoint }}",
-    {% if authzed %}
-            grpcutil.WithBearerToken("{{ token }}"),
-	        grpcutil.WithSystemCerts(grpcutil.VerifyCA),
-    {% else %}
-            // NOTE: For SpiceDB behind TLS, use:
-                // grpcutil.WithBearerToken("{{ token }}"),
-                // grpcutil.WithSystemCerts(grpcutil.VerifyCA),
-      	        grpcutil.WithInsecureBearerToken("{{ token }}"),
-    {% endif %}
+		grpcutil.WithBearerToken("{{ token }}"),
+		systemCerts,
+{% else %}
+	client, err := authzed.NewClient(
+		"{{ endpoint }}",
+		grpcutil.WithInsecureBearerToken("{{ token }}"),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+{% endif %}
 	)
 	if err != nil {
 		log.Fatalf("unable to initialize client: %s", err)
@@ -223,8 +228,7 @@ definition {{ tenant }}/post {
 ·
 client = Client(
     "{{ endpoint }}",
-    {% if authzed %}bearer_token_credentials("{{ token }}"),{% endif %}
-{% if not authzed %}# For SpiceDB behind TLS, use:
+    {% if not authzed %}# For SpiceDB behind TLS, use:
     # bearer_token_credentials("{{ token }}"),
     insecure_{% endif %}bearer_token_credentials("{{ token }}"),
 )
@@ -394,18 +398,27 @@ import (
 	pb "github.com/authzed/authzed-go/proto/authzed/api/v1"
 	"github.com/authzed/authzed-go/v1"
 	"github.com/authzed/grpcutil"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 ·
 func main() {
+{% if authzed %}
+	systemCerts, err := grpcutil.WithSystemCerts(grpcutil.VerifyCA)
+	if err != nil {
+		log.Fatalf("unable to load system CA certificates: %s", err)
+	}
+·
 	client, err := authzed.NewClient(
 		"{{ endpoint }}",
-    {% if authzed %}
-            grpcutil.WithBearerToken("{{ token }}"),
-	        grpcutil.WithSystemCerts(grpcutil.VerifyCA),
-    {% else %}
-    	grpcutil.WithInsecureBearerToken("{{ token }}"),
+		grpcutil.WithBearerToken("{{ token }}"),
+		systemCerts,
+{% else %}
+	client, err := authzed.NewClient(
+		"{{ endpoint }}",
+		grpcutil.WithInsecureBearerToken("{{ token }}"),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-    {% endif %}
+{% endif %}
 	)
 	if err != nil {
 		log.Fatalf("unable to initialize client: %s", err)
@@ -708,17 +721,27 @@ import (
 	pb "github.com/authzed/authzed-go/proto/authzed/api/v1"
 	"github.com/authzed/authzed-go/v1"
 	"github.com/authzed/grpcutil"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 ·
 func main() {
+{% if authzed %}
+	systemCerts, err := grpcutil.WithSystemCerts(grpcutil.VerifyCA)
+	if err != nil {
+		log.Fatalf("unable to load system CA certificates: %s", err)
+	}
+·
 	client, err := authzed.NewClient(
 		"{{ endpoint }}",
-    {% if authzed %}
-            grpcutil.WithBearerToken("{{ token }}"),
-	        grpcutil.WithSystemCerts(grpcutil.VerifyCA),
-    {% else %}
-    	grpcutil.WithInsecureBearerToken("{{ token }}"),
-    {% endif %}
+		grpcutil.WithBearerToken("{{ token }}"),
+		systemCerts,
+{% else %}
+	client, err := authzed.NewClient(
+		"{{ endpoint }}",
+		grpcutil.WithInsecureBearerToken("{{ token }}"),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+{% endif %}
 	)
 	if err != nil {
 		log.Fatalf("unable to initialize client: %s", err)
