@@ -1,5 +1,6 @@
-import { Callout } from 'nextra/components'
-import { InlinePlayground } from '@/components/playground'
+import { Callout } from 'nextra/components';
+import YouTube from 'react-youtube';
+import { InlinePlayground } from '@/components/playground';
 
 # Schema Language
 
@@ -7,14 +8,20 @@ A SpiceDB schema defines the types of objects found, how those objects relate to
 
 The schema language's extension for use on a file system is `.zed`.
 
-<Callout type="info">
-  You can experiment with schemas in real-time with the [Playground](https://play.authzed.com).
-</Callout>
+You can experiment with schemas in real-time with the [Playground](https://play.authzed.com).
+
+The following video provides an overview of schema development using the Playground:
+
+<br />
+<YouTube videoId="AoK0LrkGFDY" />
+
+After studying this page's content, you may want to also read the [Developing a Schema] doc.
+
+[Developing a Schema]: ../modeling/developing-a-schema
 
 ## Definitions
 
 The top level of a Schema consists of zero or more [Object Type definitions](#object-type-definitions) and [Caveats](./caveats).
-
 
 ```zed
 /**
@@ -31,8 +38,9 @@ definition someobjecttype {}
 ```
 
 <Callout type="info">
-  Note that the examples are unprefixed.
-  You'll need to add the prefix from your permissions system if calling `WriteSchema` for a permissions system hosted in Serverless.
+  Note that the examples are unprefixed. You'll need to add the prefix from your
+  permissions system if calling `WriteSchema` for a permissions system hosted in
+  Serverless.
 </Callout>
 
 ### Object Type Definitions
@@ -77,7 +85,8 @@ definition document {
 <Callout type="info">
   In the above example, the `user` on `reader` does not contain a sub-relation
 
-  Occasionally you will see a subject which has a sub-relation such as `usergroup:admins#members` which refers not just to the `usergroup` as a whole, but the set of members which have that relation to the `usergroup`.
+Occasionally you will see a subject which has a sub-relation such as `usergroup:admins#members` which refers not just to the `usergroup` as a whole, but the set of members which have that relation to the `usergroup`.
+
 </Callout>
 
 ### Subject Relations
@@ -98,12 +107,14 @@ definition group {
 ```
 
 <Callout type="info">
-  Subject Relations are useful in RBAC-style permissions systems to grant "roles" to _sets_ of subjects, such as the members of a team.
+  Subject Relations are useful in RBAC-style permissions systems to grant
+  "roles" to _sets_ of subjects, such as the members of a team.
 </Callout>
 
 ### Wildcards
 
-Relations can also specify wildcards to indicate that a grant can be made to the resource _type_ as a whole, rather than a particular resource. This allows _public_ access to be granted to a particular subject type.
+Relations can also specify wildcards to indicate that a grant can be made to the resource _type_ as a whole, rather than a particular resource.
+This allows _public_ access to be granted to a particular subject type.
 
 For example, a `viewer` might indicate that _all_ users can be granted the ability to view the resource:
 
@@ -127,8 +138,8 @@ resource:someresource viewer user:*
 Now _any_ user is a `viewer` of the resource.
 
 <Callout type="warning">
-  Be **very careful** with wildcard support in your schema!
-  **Only** grant it to read permissions, unless you intend to allow for universal writing.
+  Be **very careful** with wildcard support in your schema! **Only** grant it to
+  read permissions, unless you intend to allow for universal writing.
 </Callout>
 
 ### Naming Relations
@@ -146,7 +157,8 @@ Examples:
 
 ## Permissions
 
-A `permission` defines a _computed set of subjects_ that have a permission of some kind on the parent object. For example, is a user within the set of users that can `edit` a document.
+A `permission` defines a _computed set of subjects_ that have a permission of some kind on the parent object.
+For example, is a user within the set of users that can `edit` a document.
 
 Permissions are always defined with a _name_ and an _expression_ defining how that permission's allowed set of subjects is computed:
 
@@ -211,7 +223,7 @@ permission can_only_read = reader - writer
 
 #### `->` (Arrow)
 
-Arrows allow for "walking" the heirarchy of relations (and permissions) defined for an object, referencing a permission or relation on the _resulting_ object.
+Arrows allow for "walking" the heirarchy of relations (and permissions) defined for an **object** of a subject, referencing a permission or relation on the _resulting_ subject's object.
 
 For example, imagine a schema where a document is found under a folder:
 
@@ -276,8 +288,38 @@ definition document {
 ```
 
 <Callout type="info">
-It is _recommended_ that the right side of all arrows refer to **permissions**, instead
-of relations. This allows for easy nested computation, and is more readable.
+  It is _recommended_ that the right side of all arrows refer to
+  **permissions**, instead of relations, as this allows for easy nested
+  computation, and is more readable.
+</Callout>
+
+##### Subject relations and Arrows
+
+<Callout type="warning">
+  Arrows operate on the **object** of the subject(s) found on a `relation`. They
+  *do not* operate on the relation/permission of a subject, *even if the subject
+  refers to a relation or permission*.
+</Callout>
+
+For example, in:
+
+```
+defintion resource {
+  relation parent: group#member
+  permission someperm = parent->something
+}
+```
+
+`parent->something` refers to the `something` permission on the **group**, and `#member` will be ignored for the arrow.
+
+It is recommended to not use arrows over relations that allow for subject relations without noting that
+fact via a comment.
+
+<Callout type="info">
+  Why is this the case? In one word: **performance**. If arrows operated over
+  the subject's relation or permission, a full LookupSubjects call would be
+  necessary for the arrow to correctly "walk", which would make these
+  CheckPermission requests potentially *incredibly* expensive.
 </Callout>
 
 ### Naming Permissions
@@ -294,7 +336,10 @@ Examples:
 | `member` | is member of the object |
 
 <Callout type="info">
-You'll note that we also used `member` above in the relation example. Defining `member` as a **permission** might be found when you have multiple "ways" a subject can be a member of a resource, thus changing it from a simple relation to a _computed_ set of subjects.
+  You'll note that we also used `member` above in the relation example. Defining
+  `member` as a **permission** might be found when you have multiple "ways" a
+  subject can be a member of a resource, thus changing it from a simple relation
+  to a _computed_ set of subjects.
 </Callout>
 
 ## Comments
@@ -302,7 +347,8 @@ You'll note that we also used `member` above in the relation example. Defining `
 ### Documentation Comments
 
 <Callout type="info">
-It is **highly** recommended to put doc comments on all definitions, relations and permissions.
+  It is **highly** recommended to put doc comments on all definitions, relations
+  and permissions.
 </Callout>
 
 ```zed
@@ -320,7 +366,7 @@ It is **highly** recommended to put doc comments on all definitions, relations a
 
 ## Full Example
 
-<InlinePlayground reference="vlduOcwEOmVY"/>
+<InlinePlayground reference="vlduOcwEOmVY" />
 
 ## Common Patterns
 
@@ -333,7 +379,7 @@ Both admins and members are considered to have membership in the group.
 A role can be applied to individual users and groups.
 All individually applied users as well as members for applied groups will have the `allowed` permission.
 
-<InlinePlayground reference="CNe3PXNuhypm"/>
+<InlinePlayground reference="CNe3PXNuhypm" />
 
 ### Global admin permissions
 
@@ -343,7 +389,7 @@ In lieu of adding a <code>super_admin</code> relation on every object that can b
 Super admin users can be applied to <code>platform</code> and a relation to <code>platform</code> on top level objects.
 Admin permission on resources is then defined as the direct owner of the resource as well as through a traversal of the object hierarchy to the platform super admin.
 
-<InlinePlayground reference="m1lRfaaYf9XP"/>
+<InlinePlayground reference="m1lRfaaYf9XP" />
 
 ### Synthetic relations
 
@@ -368,10 +414,11 @@ In this example, a folder can have users with read permission.
 Additionally, users that can read the parent folder can also read the current folder.
 Checking read permission on a folder will recursively consider these relations as the answer is computed.
 
-<InlinePlayground reference="8tE13O7iMM8W"/>
+<InlinePlayground reference="8tE13O7iMM8W" />
 
 <Callout type="info">
-  Note that since `parent->read` calls the same `read` permission, it will form a recursive lookup across the chain of parent folder(s).
+  Note that since `parent->read` calls the same `read` permission, it will form
+  a recursive lookup across the chain of parent folder(s).
 </Callout>
 
 ### Recursive permissions across different resource types
@@ -379,8 +426,4 @@ Checking read permission on a folder will recursively consider these relations a
 If a non-recursive resource is used as the starting point for a recursive lookup, it is
 **very important** that the permission name used on the right side of the arrow is the **same** in both the starting resource type and the parent resource type(s):
 
-<InlinePlayground reference="EWVhjM3vGxE6"/>
-
-## Try it out
-
-
+<InlinePlayground reference="EWVhjM3vGxE6" />

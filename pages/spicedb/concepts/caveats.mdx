@@ -103,7 +103,7 @@ WriteRelationshipsRequest {
         Subject: …,
         OptionalCaveat: {
            CaveatName: "ip_allowlist",
-           Context: structpb{ "cidr": "1.2.3.0" }
+           Context: structpb{ "cidr": "1.2.3.0/24" }
         }
       }
     }
@@ -113,8 +113,10 @@ WriteRelationshipsRequest {
 
 A few important notes:
 
-- The **Context** of a caveat is defined both by the values written in the `Relationship`, as well as those provided in the `CheckPermissionRequest`: if empty, then only the context specified on a CheckPermission request will be used. Otherwise, the values in the `Relationship` take precedence over those in the `CheckPermissionRequest`.
-  - Context of a caveat provided in `Relationship` is stored alongside the relationship and is provided to the caveat expression at runtime. This allows for **partial** binding of data at write time.
+- The **Context** of a caveat is defined both by the values written in the `Relationship`, as well as those provided in the `CheckPermissionRequest`: if empty, then only the context specified on a CheckPermission request will be used.
+  Otherwise, the values in the `Relationship` take precedence over those in the `CheckPermissionRequest`.
+  - Context of a caveat provided in `Relationship` is stored alongside the relationship and is provided to the caveat expression at runtime.
+    This allows for **partial** binding of data at write time.
 - The Context is a `structpb`, which is defined by Google and represents JSON-like data: [https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb](https://pkg.go.dev/google.golang.org/protobuf/types/known/structpb)
   - To send 64-bit integers, encode them as strings.
 - A relationship cannot be duplicated, with or without a caveat, e.g. two relationships that differ only on their use of a caveat cannot both exist.
@@ -187,7 +189,7 @@ WriteRelationshipsRequest {
         },
         OptionalCaveat: {
            CaveatName: "has_valid_ip",
-           Context: structpb{ "allowed_range": "10.20.30.0" }
+           Context: structpb{ "allowed_range": "10.20.30.0/24" }
         }
       }
     }
@@ -223,7 +225,7 @@ The [Assertions] and [Expected Relations] definitions for validation of schema s
 
 Caveated permissions can be checked in assertions by the addition of the `assertCaveated` block:
 
-```yaml title="Assertions for caveated permissions"
+```yaml filename="Assertions for caveated permissions"
 assertTrue:
   - "document:specificdocument#reader@user:specificuser"
 assertCaveated:
@@ -234,7 +236,7 @@ assertFalse:
 
 To assert that a permission does or does not exist when some context it specified, the `with` keyword can be used to provide the context:
 
-```yaml title="Assertions for caveated permissions with context"
+```yaml filename="Assertions for caveated permissions with context"
 assertTrue:
   - "document:specificdocument#reader@user:specificuser"
   - 'document:specificdocument#reader@user:caveateduser with {"somecondition": true}'
@@ -249,7 +251,7 @@ assertFalse:
 
 Expected relations notes if a subject is caveated via the inclusion of the `[...]` string on the end of the subject:
 
-```yaml title="Expected Relations with caveats"
+```yaml filename="Expected Relations with caveats"
 document:specificdocument#view:
   - "[user:specificuser] is <document:specificdocument#reader>"
   - "[user:caveateduser[...]] might be <document:specificdocument#writer>"
