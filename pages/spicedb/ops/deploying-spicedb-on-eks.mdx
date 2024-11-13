@@ -27,26 +27,27 @@ In order for the cluster to dynamically configure DNS, the first step is grant a
 
 ```json
 {
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "route53:GetChange",
-      "Resource": "arn:aws:route53:::change/*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "route53:ChangeResourceRecordSets",
-        "route53:ListResourceRecordSets"
-      ],
-      "Resource": "arn:aws:route53:::hostedzone/*" 
-    {
-      "Effect": "Allow",
-      "Action": "route53:ListHostedZonesByName",
-      "Resource": "*"
-    }
-  ]
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Effect": "Allow",
+			"Action": "route53:GetChange",
+			"Resource": "arn:aws:route53:::change/*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": [
+				"route53:ChangeResourceRecordSets",
+				"route53:ListResourceRecordSets"
+			],
+			"Resource": "arn:aws:route53:::hostedzone/*"
+		},
+		{
+			"Effect": "Allow",
+			"Action": "route53:ListHostedZonesByName",
+			"Resource": "*"
+		}
+	]
 }
 ```
 
@@ -289,13 +290,13 @@ EOF
 
 - Apply the above configuration with: `kubectl apply -f spicedb-lb.yaml`
 - Run the following command to get the External-IP of the load balancer: `kubectl get services spicedb-external-lb -o json | jq '.status.loadBalancer.ingress[0].hostname'`
-- Take the output of the command and add it as a C-Name record in your route 53 hosted zone
+- Take the output of the command and add it as a C-Name record in your Route 53 Hosted Zone. **Note**: Ensure that it's added to the record containing the `dnsNames` that was specified while creating an Issuer & Certificate in Step 5.
 
 ### Test
 
 You can use the Zed CLI tool to make sure everything works as expected:
 
-`zed context set eks-guide demo.example.com averysecretpresharedkey`
+`zed context set eks-guide demo.example.com:50051 averysecretpresharedkey`
 
 Write a schema
 
@@ -314,7 +315,7 @@ EOF
 Write a relationship:
 
 ```yaml
-zed relationship create doc:1 writer user:emilia
+zed relationship create doc:1 owner user:emilia
 ```
 
 Check a permission:
